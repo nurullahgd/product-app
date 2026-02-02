@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import "github.com/labstack/echo"
 
 func main() {
-	fmt.Println("Hello, World!")
+	e := echo.New()
+	e.Start("localhost:8000")
+
 }
