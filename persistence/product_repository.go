@@ -45,3 +45,9 @@ func (ProductRepository *ProductRepository) GetAllProducts() []domain.Product {
 
 	return products
 }
+
+func NewProductRepository(dbPool *pgxpool.Pool) IProductRepository {
+	return &ProductRepository{
+		dbPool: dbPool,
+	}
+}
