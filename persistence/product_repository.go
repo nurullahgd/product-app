@@ -2,18 +2,21 @@ package persistence
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/gommon/log"
 	"github.com/nurullahgd/product-app/domain"
+	constants "github.com/nurullahgd/product-app/persistence/common"
 )
 
 type IProductRepository interface {
 	GetAllProducts() []domain.Product
 	GetAllProductsByStore(storeName string) []domain.Product
 	AddProduct(product domain.Product) error
+	GetById(productId int64) (domain.Product, error)
 }
 
 func NewProductRepository(dbPool *pgxpool.Pool) IProductRepository {
@@ -85,4 +88,33 @@ func ExtractProductsFromRows(productRows pgx.Rows) []domain.Product {
 	}
 
 	return products
+}
+
+func (ProductRepository *ProductRepository) GetById(productId int64) (domain.Product, error) {
+	ctx := context.Background()
+
+	getByIdSql := `Select * from products where id=$1`
+
+	queryRow := ProductRepository.dbPool.QueryRow(ctx, getByIdSql, productId)
+
+	var id int64
+	var name string
+	var price float32
+	var discount float32
+	var store string
+
+	err := queryRow.Scan(&id, &name, &price, &discount, &store)
+	if err != nil && err.Error() == constants.NOT_FOUND {
+		return domain.Product{}, errors.New(fmt.Sprintf("Product not found with id %d", productId))
+	}
+	if err != nil {
+		return domain.Product{}, errors.New(fmt.Sprintf("Something Wrong, Check To ID: %d", productId))
+	}
+	return domain.Product{
+		Id:       id,
+		Name:     name,
+		Price:    price,
+		Discount: discount,
+		Store:    store,
+	}, nil
 }
